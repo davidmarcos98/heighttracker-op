@@ -1,18 +1,19 @@
 [Setting category="Info" name="Enabled"]
 bool enabled = false;
 
-[Setting category="Advanced" name="Endpoint"]
-string endpointUrl = "https://tm.snekw.com/api/map/update";
+[Setting category="Info" name="User"]
+string user = "";
 
-[Setting category="Info" name="Token" description="Token is retrieved from https://tm.snekw.com/map or from self hosted instance" password]
-string token = "";
+[Setting category="Info" name="Endpoint"]
+string endpointUrl = "";
+
 
 Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
     auto req = Net::HttpRequest();
     req.Method = Net::HttpMethod::Post;
     req.Body = Json::Write(data);
+    print(req.Body);
     req.Headers['Content-Type'] = 'application/json';
-    req.Headers['Authorization'] = "Token " + token;
     req.Url = url;
     req.Start();
     
@@ -25,6 +26,7 @@ Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
 void Main(){
 	auto app = cast<CTrackMania>(GetApp());
 
+
     string currentMapUid = "";
     bool lastMapSent = false;
     bool sendingMap = false;
@@ -34,7 +36,8 @@ void Main(){
 
     while(true){
         auto map = app.RootMap;
-
+	auto visState = VehicleState::ViewingPlayerState();
+    	auto TMData = PlayerState::GetRaceData();
         if(enabled && map !is null && map.MapInfo.MapUid != "" && app.Editor is null){
             auto mapUid = map.MapInfo.MapUid;
             if(currentMapUid != mapUid){
@@ -52,8 +55,9 @@ void Main(){
             retries = 5;
             delay = 1000;
         }
-
-        if(enabled && currentMapUid != "" && lastMapSent == false){
+	print(TMData.IsPaused);
+	print(Math::Round(TMData.dPlayerInfo.Speed));
+        if(enabled && currentMapUid != "" && !TMData.IsPaused && Math::Round(TMData.dPlayerInfo.Speed) > 0){
             if(sendingMap == false && (thisErrored == false || retries > 0)){
                 sendingMap = true;
                 Json::Value data = Json::Object();
@@ -64,6 +68,8 @@ void Main(){
                 data["mapGoldTime"] = Time::Format(map.MapInfo.TMObjective_GoldTime);
                 data["mapSilverTime"] = Time::Format(map.MapInfo.TMObjective_SilverTime);
                 data["mapBronzeTime"] = Time::Format(map.MapInfo.TMObjective_GoldTime);
+                data["player"] = user;
+                data["height"] = visState.Position.y;
                 print("Sending map info. ("+tostring(currentMapUid)+")");
                 auto result = PostAsync(endpointUrl, data);
                 auto code = result.ResponseCode();
@@ -84,18 +90,5 @@ void Main(){
         }
 
         sleep(delay);
-    }
-}
-
-[SettingsTab name="Restore Web"]
-void RenderSettings(){
-    UI::Text("Click the button below to retrieve the currently used token.");
-    UI::Text("This is useful if you need to restore the token on the web site.");
-    if(UI::Button("Copy Token to clipboard")){
-        IO::SetClipboard(token);
-        print("Token copied to clipboard");
-    }
-    if(UI::Button("Print Token to Log")){
-        print("Token: " + token);
     }
 }

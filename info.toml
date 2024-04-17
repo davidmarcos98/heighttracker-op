@@ -1,9 +1,11 @@
 [meta]
-name = "SNWTMMap"
-author = "Snekw"
+name = "PlayerDataTracker"
+author = "socramdavid"
 category = "Utilities"
 version = "0.0.4"
 siteid = 187
 
 [script]
 imports = [ "Formatting.as", "Time.as" ]
+dependencies = ["MLHook", "MLFeedRaceData", "PlayerState", "VehicleState"] # need both
+
