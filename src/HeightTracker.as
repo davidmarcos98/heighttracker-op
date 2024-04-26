@@ -1,11 +1,11 @@
 [Setting category="Info" name="Enabled"]
 bool enabled = false;
 
-[Setting category="Info" name="User"]
-string user = "";
-
 [Setting category="Info" name="Endpoint"]
 string endpointUrl = "";
+
+[Setting category="Info" name="Interval (milliseconds)"]
+int interval = "5000";
 
 
 Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
@@ -28,62 +28,60 @@ void Main(){
 
 
     string currentMapUid = "";
-    bool lastMapSent = false;
     bool sendingMap = false;
     bool thisErrored = false;
     int retries = 5;
-    int delay = 1000;
+    int delay = interval;
+    Json::Value payload = Json::Object();
+    int saved = 0;
 
     while(true){
         auto map = app.RootMap;
-	auto visState = VehicleState::ViewingPlayerState();
     	auto TMData = PlayerState::GetRaceData();
         if(enabled && map !is null && map.MapInfo.MapUid != "" && app.Editor is null){
             auto mapUid = map.MapInfo.MapUid;
             if(currentMapUid != mapUid){
                 print("Map changed. (old: "+tostring(currentMapUid)+" new: " + tostring(mapUid) +")");
                 currentMapUid = mapUid;
-                lastMapSent = false;
                 thisErrored = false;
                 retries = 5;
-                delay = 1000;
+                delay = interval;
             }
         } else if(enabled) {
-            lastMapSent = false;
             currentMapUid = "";
             thisErrored = false;
             retries = 5;
-            delay = 1000;
+            delay = interval;
         }
-	print(TMData.IsPaused);
-	print(Math::Round(TMData.dPlayerInfo.Speed));
-        if(enabled && currentMapUid != "" && !TMData.IsPaused && Math::Round(TMData.dPlayerInfo.Speed) > 0){
+        if(enabled && currentMapUid != "" && TMData.PlayerState.Driving && Math::Round(TMData.dPlayerInfo.Speed) > 0){
+	        auto visState = VehicleState::ViewingPlayerState();
             if(sendingMap == false && (thisErrored == false || retries > 0)){
                 sendingMap = true;
                 Json::Value data = Json::Object();
                 data["mapUid"] = currentMapUid;
                 data["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
-                data["mapAuthor"] = tostring(StripFormatCodes(map.MapInfo.AuthorNickName));
-                data["mapAuthorTime"] = Time::Format(map.MapInfo.TMObjective_AuthorTime);
-                data["mapGoldTime"] = Time::Format(map.MapInfo.TMObjective_GoldTime);
-                data["mapSilverTime"] = Time::Format(map.MapInfo.TMObjective_SilverTime);
-                data["mapBronzeTime"] = Time::Format(map.MapInfo.TMObjective_GoldTime);
-                data["player"] = user;
+                data["player"] = TMData.dPlayerInfo.Name;
                 data["height"] = visState.Position.y;
-                print("Sending map info. ("+tostring(currentMapUid)+")");
-                auto result = PostAsync(endpointUrl, data);
-                auto code = result.ResponseCode();
-                if(code == 200){
-                    auto response = result.String();
-                    if(response == currentMapUid){
-                        lastMapSent = true;
-                        print("Map info sent. (" + tostring(response) + ")");
+                int time = Time::get_Stamp();
+                payload[time] = data;
+                saved = saved + 1;
+                if(saved == 5){
+                    print("Sending map info. ("+tostring(currentMapUid)+")");
+                    auto result = PostAsync(endpointUrl, payload);
+                    auto code = result.ResponseCode();
+                    if(code == 200){
+                        auto response = result.String();
+                        if(response == currentMapUid){
+                            print("Map info sent. (" + tostring(response) + ")");
+                        }
+                        payload = Json::Object();
+                        saved = 0;
+                    } else {
+                        print("Failed to send map info. ("+tostring(code)+")");
+                        retries = retries - 1;
+                        delay = 5000;
+                        thisErrored = true;
                     }
-                } else {
-                    print("Failed to send map info. ("+tostring(code)+")");
-                    retries = retries - 1;
-                    delay = 5000;
-                    thisErrored = true;
                 }
                 sendingMap = false;
             }
