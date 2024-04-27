@@ -2,8 +2,8 @@
 name = "Height Tracker"
 author = "socramdavid"
 category = "Utilities"
-version = "0.0.4"
-siteid = 187
+version = "0.9"
+siteid = 530
 
 [script]
 imports = [ "Formatting.as", "Time.as" ]
