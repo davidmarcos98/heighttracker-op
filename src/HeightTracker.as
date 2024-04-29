@@ -5,7 +5,7 @@ bool enabled = false;
 string endpointUrl = "";
 
 [Setting category="Info" name="Interval (milliseconds)"]
-int interval = "5000";
+int interval = 5000;
 
 
 Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
@@ -53,7 +53,7 @@ void Main(){
             retries = 5;
             delay = interval;
         }
-        if(enabled && currentMapUid != "" && TMData.PlayerState.Driving && Math::Round(TMData.dPlayerInfo.Speed) > 0){
+        if(enabled && currentMapUid != "" && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused && Math::Round(TMData.dPlayerInfo.Speed) > 0){
 	        auto visState = VehicleState::ViewingPlayerState();
             if(sendingMap == false && (thisErrored == false || retries > 0)){
                 sendingMap = true;
@@ -62,7 +62,7 @@ void Main(){
                 data["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
                 data["player"] = TMData.dPlayerInfo.Name;
                 data["height"] = visState.Position.y;
-                int time = Time::get_Stamp();
+                string time = tostring(Time::get_Stamp());
                 payload[time] = data;
                 saved = saved + 1;
                 if(saved == 5){
