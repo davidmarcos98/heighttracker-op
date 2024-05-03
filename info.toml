@@ -2,7 +2,7 @@
 name = "Height Tracker"
 author = "socramdavid"
 category = "Utilities"
-version = "0.9"
+version = "1.0.1"
 siteid = 530
 
 [script]
