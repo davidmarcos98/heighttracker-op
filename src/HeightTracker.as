@@ -25,7 +25,6 @@ Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
 
 void Main(){
 	auto app = cast<CTrackMania>(GetApp());
-    string STATS_FILE = IO::FromDataFolder("PluginStorage/dips-plus-plus/stats.json");
 
     string currentMapUid = "";
     bool sendingMap = false;
@@ -61,6 +60,7 @@ void Main(){
                 if(saved == 5){
                     try{
                         print("Sending map info. ("+tostring(currentMapUid)+")");
+                        string STATS_FILE = IO::FromDataFolder("PluginStorage/dips-plus-plus/stats.json");
                         if (IO::FileExists(STATS_FILE)) {
                             payload['dipsData'] = Json::FromFile(STATS_FILE);
                         }
