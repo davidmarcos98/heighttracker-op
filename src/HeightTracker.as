@@ -7,9 +7,6 @@ string endpointUrl = "";
 [Setting category="Info" name="mapUid"]
 string mapUid = "";
 
-[Setting category="Info" name="Interval (milliseconds)"]
-int interval = 5000;
-
 
 Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
     auto req = Net::HttpRequest();
@@ -32,9 +29,7 @@ void Main(){
 
     string currentMapUid = "";
     bool sendingMap = false;
-    bool thisErrored = false;
-    int retries = 5;
-    int delay = interval;
+    int delay = 5000;
     Json::Value payload = Json::Object();
     int saved = 0;
 
@@ -47,19 +42,13 @@ void Main(){
             if(currentMapUid != mapUid){
                 print("Map changed. (old: "+tostring(currentMapUid)+" new: " + tostring(mapUid) +")");
                 currentMapUid = mapUid;
-                thisErrored = false;
-                retries = 5;
-                delay = interval;
             }
         } else if(enabled) {
             currentMapUid = "";
-            thisErrored = false;
-            retries = 5;
-            delay = interval;
         }
         if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused && Math::Round(TMData.dPlayerInfo.Speed) > 0){
 	        auto visState = VehicleState::ViewingPlayerState();
-            if(sendingMap == false && (thisErrored == false || retries > 0)){
+            if(sendingMap == false){
                 sendingMap = true;
                 Json::Value data = Json::Object();
                 data["mapUid"] = currentMapUid;
@@ -83,15 +72,14 @@ void Main(){
                                 print("Map info sent. (" + tostring(response) + ")");
                             }
                             payload = Json::Object();
-                            saved = 0;
                         } else {
                             print("Failed to send map info. ("+tostring(code)+")");
-                            retries = retries - 1;
-                            delay = 5000;
-                            thisErrored = true;
                         }
+                        saved = 0;
+                        sendingMap = false;
                     } catch {
                         warn("exception sending data to API: " + getExceptionInfo());
+                        sendingMap = false;
                     }
                 }
                 sendingMap = false;
