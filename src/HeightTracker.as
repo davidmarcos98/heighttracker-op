@@ -70,24 +70,28 @@ void Main(){
                 payload[time] = data;
                 saved = saved + 1;
                 if(saved == 5){
-                    print("Sending map info. ("+tostring(currentMapUid)+")");
-                    if (IO::FileExists(STATS_FILE)) {
-                        payload['dipsData'] = Json::FromFile(STATS_FILE);
-                    }
-                    auto result = PostAsync(endpointUrl, payload);
-                    auto code = result.ResponseCode();
-                    if(code == 200){
-                        auto response = result.String();
-                        if(response == currentMapUid){
-                            print("Map info sent. (" + tostring(response) + ")");
+                    try{
+                        print("Sending map info. ("+tostring(currentMapUid)+")");
+                        if (IO::FileExists(STATS_FILE)) {
+                            payload['dipsData'] = Json::FromFile(STATS_FILE);
                         }
-                        payload = Json::Object();
-                        saved = 0;
-                    } else {
-                        print("Failed to send map info. ("+tostring(code)+")");
-                        retries = retries - 1;
-                        delay = 5000;
-                        thisErrored = true;
+                        auto result = PostAsync(endpointUrl, payload);
+                        auto code = result.ResponseCode();
+                        if(code == 200){
+                            auto response = result.String();
+                            if(response == currentMapUid){
+                                print("Map info sent. (" + tostring(response) + ")");
+                            }
+                            payload = Json::Object();
+                            saved = 0;
+                        } else {
+                            print("Failed to send map info. ("+tostring(code)+")");
+                            retries = retries - 1;
+                            delay = 5000;
+                            thisErrored = true;
+                        }
+                    } catch {
+                        warn("exception sending data to API: " + getExceptionInfo());
                     }
                 }
                 sendingMap = false;
