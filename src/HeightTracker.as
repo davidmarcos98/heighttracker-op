@@ -46,7 +46,7 @@ void Main(){
         } else if(enabled) {
             currentMapUid = "";
         }
-        if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused && Math::Round(TMData.dPlayerInfo.Speed) > 0){
+        if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused){
 	        auto visState = VehicleState::ViewingPlayerState();
             if(sendingMap == false){
                 sendingMap = true;
