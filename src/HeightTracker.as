@@ -49,7 +49,7 @@ void Main(){
 
     string currentMapUid = "";
     bool sendingMap = false;
-    int maxDelay = 1000;
+    int maxDelay = 5000;
     int currentDelay = 0;
     int stepDelay = 200;
     int lastHeight = 0;
@@ -72,10 +72,15 @@ void Main(){
             currentMapUid = "";
 
         }
-        if(enabled && currentMapUid != "" && currentMapUid == mapUid && !PlaygroundClientScriptAPI.IsInGameMenuDisplayed){
+        string name = '';
+        try {
+            name = app.LocalPlayerInfo.Name;
+        } catch {
+            name = '';
+        }
+        if(enabled && currentMapUid != "" && currentMapUid == mapUid && !PlaygroundClientScriptAPI.IsInGameMenuDisplayed && name != ''){
 	        auto visState = VehicleState::ViewingPlayerState();
             int currentHeight = visState.Position.y;
-            print(currentHeight);
             if(currentHeight > lastHeight){
                 lastHeight = currentHeight;
                 auto @j = Json::Object();
@@ -83,7 +88,7 @@ void Main(){
                 j["rotq"] = QuatToJson(quat(DirUpLeftToMat(visState.Dir, visState.Up, visState.Left)));
                 j["vel"] = Vec3ToJson(visState.WorldVel);
                 j["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
-                j["player"] = network.PlayerInfo.Name;
+                j["player"] = name;
                 j["mapUid"] = currentMapUid;
                 lastSaved = j;
             }
