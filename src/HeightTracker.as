@@ -28,19 +28,19 @@ mat3 DirUpLeftToMat(const vec3 &in dir, const vec3 &in up, const vec3 &in left) 
 }
 
 Json::Value@ Vec3ToJson(const vec3 &in v) {
-    auto @j = Json::Array();
-    j.Add(v.x);
-    j.Add(v.y);
-    j.Add(v.z);
+    auto @j = Json::Object();
+    j['x'] = v.x;
+    j['y'] = v.y;
+    j['z'] = v.z;
     return j;
 }
 
 Json::Value@ QuatToJson(const quat &in q) {
-    auto @j = Json::Array();
-    j.Add(q.x);
-    j.Add(q.y);
-    j.Add(q.z);
-    j.Add(q.w);
+    auto @j = Json::Object();
+    j['x'] = q.x;
+    j['y'] = q.y;
+    j['z'] = q.z;
+    j['w'] = q.w;
     return j;
 }
 
@@ -49,9 +49,9 @@ void Main(){
 
     string currentMapUid = "";
     bool sendingMap = false;
-    int maxDelay = 5000;
+    int maxDelay = 1000;
     int currentDelay = 0;
-    int stepDelay = 100;
+    int stepDelay = 200;
     int lastHeight = 0;
     Json::Value lastSaved = Json::Object();
     Json::Value payload = Json::Object();
@@ -74,6 +74,7 @@ void Main(){
         if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused){
 	        auto visState = VehicleState::ViewingPlayerState();
             int currentHeight = visState.Position.y;
+            print(currentHeight);
             if(currentHeight > lastHeight){
                 lastHeight = currentHeight;
                 auto @j = Json::Object();
@@ -85,7 +86,7 @@ void Main(){
                 j["mapUid"] = currentMapUid;
                 lastSaved = j;
             }
-            if(currentDelay == maxDelay){
+            if(currentDelay >= maxDelay){
                 print("Saving new data...");
                 currentDelay = 0;
                 if(sendingMap == false){
