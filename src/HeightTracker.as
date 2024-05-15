@@ -60,8 +60,8 @@ void Main(){
     while(true){
         auto map = app.RootMap;
         CTrackManiaNetwork@ network;
-        @Network = app.Network;
-        @PlaygroundClientScriptAPI = Network.PlaygroundClientScriptAPI;
+        auto network = app.Network;
+        auto PlaygroundClientScriptAPI = network.PlaygroundClientScriptAPI;
         
         if(enabled && map !is null && map.MapInfo.MapUid != "" && app.Editor is null){
             auto mapUid = map.MapInfo.MapUid;
