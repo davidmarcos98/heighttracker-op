@@ -59,7 +59,9 @@ void Main(){
 
     while(true){
         auto map = app.RootMap;
-    	auto TMData = PlayerState::GetRaceData();
+        CTrackManiaNetwork@ network;
+        @Network = app.Network;
+        @PlaygroundClientScriptAPI = Network.PlaygroundClientScriptAPI;
         
         if(enabled && map !is null && map.MapInfo.MapUid != "" && app.Editor is null){
             auto mapUid = map.MapInfo.MapUid;
@@ -71,7 +73,7 @@ void Main(){
             currentMapUid = "";
 
         }
-        if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused){
+        if(enabled && currentMapUid != "" && currentMapUid == mapUid && !PlaygroundClientScriptAPI.IsInGameMenuDisplayed){
 	        auto visState = VehicleState::ViewingPlayerState();
             int currentHeight = visState.Position.y;
             print(currentHeight);
@@ -82,7 +84,7 @@ void Main(){
                 j["rotq"] = QuatToJson(quat(DirUpLeftToMat(visState.Dir, visState.Up, visState.Left)));
                 j["vel"] = Vec3ToJson(visState.WorldVel);
                 j["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
-                j["player"] = TMData.dPlayerInfo.Name;
+                j["player"] = network.PlayerInfo.Name;
                 j["mapUid"] = currentMapUid;
                 lastSaved = j;
             }

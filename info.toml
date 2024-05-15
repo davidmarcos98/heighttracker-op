@@ -7,5 +7,5 @@ siteid = 530
 
 [script]
 imports = [ "Formatting.as", "Time.as" ]
-dependencies = ["MLHook", "MLFeedRaceData", "PlayerState", "VehicleState"] # need both
+dependencies = ["MLHook", "MLFeedRaceData", "VehicleState"] # need both
 
