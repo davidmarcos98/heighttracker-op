@@ -23,12 +23,21 @@ Net::HttpRequest@ PostAsync(const string &in url, const Json::Value &in data){
     return req;
 }
 
+mat3 DirUpLeftToMat(const vec3 &in dir, const vec3 &in up, const vec3 &in left) {
+    return mat3(left, up, dir);
+}
+
+
 void Main(){
 	auto app = cast<CTrackMania>(GetApp());
 
     string currentMapUid = "";
     bool sendingMap = false;
-    int delay = 5000;
+    int maxDelay = 5000;
+    int currentDelay = 0;
+    int stepDelay = 100;
+    int lastHeight = 0;
+    Json::Value lastSaved = Json::Object();
     Json::Value payload = Json::Object();
     int saved = 0;
 
@@ -44,48 +53,59 @@ void Main(){
             }
         } else if(enabled) {
             currentMapUid = "";
+
         }
         if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused){
 	        auto visState = VehicleState::ViewingPlayerState();
-            if(sendingMap == false){
-                sendingMap = true;
-                Json::Value data = Json::Object();
-                data["mapUid"] = currentMapUid;
-                data["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
-                data["player"] = TMData.dPlayerInfo.Name;
-                data["height"] = visState.Position.y;
-                string time = tostring(Time::get_Stamp());
-                payload[time] = data;
-                saved = saved + 1;
-                if(saved == 5){
-                    try{
-                        print("Sending map info. ("+tostring(currentMapUid)+")");
-                        string STATS_FILE = IO::FromDataFolder("PluginStorage/dips-plus-plus/stats.json");
-                        if (IO::FileExists(STATS_FILE)) {
-                            payload['dipsData'] = Json::FromFile(STATS_FILE);
-                        }
-                        auto result = PostAsync(endpointUrl, payload);
-                        auto code = result.ResponseCode();
-                        if(code == 200){
-                            auto response = result.String();
-                            if(response == currentMapUid){
-                                print("Map info sent. (" + tostring(response) + ")");
+            int currentHeight = visState.Position.y;
+            if(currentHeight > lastHeight){
+                lastHeight = currentHeight;
+                auto @j = Json::Object();
+                j["pos"] = Vec3ToJson(visState.Position);
+                j["rotq"] = QuatToJson(quat(DirUpLeftToMat(visState.Dir, visState.Up, visState.Left)));
+                j["vel"] = Vec3ToJson(visState.WorldVel);
+                j["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
+                j["player"] = TMData.dPlayerInfo.Name;
+                j["mapUid"] = currentMapUid;
+                lastSaved = j;
+            }
+            if(currentDelay == maxDelay){
+                print("Saving new data...");
+                currentDelay = 0;
+                if(sendingMap == false){
+                    sendingMap = true;
+                    string time = tostring(Time::get_Stamp());
+                    payload[time] = j;
+                    j = Json::Object();
+                    lastHeight = 0;
+                    saved = saved + 1;
+                    if(saved == 5){
+                        try{
+                            print("Sending map info. ("+tostring(currentMapUid)+")");
+                            auto result = PostAsync(endpointUrl, payload);
+                            auto code = result.ResponseCode();
+                            if(code == 200){
+                                auto response = result.String();
+                                if(response == currentMapUid){
+                                    print("Map info sent. (" + tostring(response) + ")");
+                                }
+                                payload = Json::Object();
+                            } else {
+                                print("Failed to send map info. ("+tostring(code)+")");
                             }
-                            payload = Json::Object();
-                        } else {
-                            print("Failed to send map info. ("+tostring(code)+")");
+                            saved = 0;
+                            sendingMap = false;
+                        } catch {
+                            warn("exception sending data to API: " + getExceptionInfo());
+                            sendingMap = false;
                         }
-                        saved = 0;
-                        sendingMap = false;
-                    } catch {
-                        warn("exception sending data to API: " + getExceptionInfo());
-                        sendingMap = false;
                     }
+                    sendingMap = false;
                 }
-                sendingMap = false;
             }
         }
 
-        sleep(delay);
+        currentDelay += stepDelay;
+        sleep(stepDelay);
     }
 }
