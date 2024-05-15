@@ -91,8 +91,8 @@ void Main(){
                 if(sendingMap == false){
                     sendingMap = true;
                     string time = tostring(Time::get_Stamp());
-                    payload[time] = j;
-                    j = Json::Object();
+                    payload[time] = lastSaved;
+                    lastSaved = Json::Object();
                     lastHeight = 0;
                     saved = saved + 1;
                     if(saved == 5){
