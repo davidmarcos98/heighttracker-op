@@ -59,7 +59,7 @@ void Main(){
 
     while(true){
         auto map = app.RootMap;
-        CTrackManiaNetwork@ network;
+        CSmScriptPlayer@ ScriptAPI;
         auto PlaygroundClientScriptAPI = app.Network.PlaygroundClientScriptAPI;
         
         if(enabled && map !is null && map.MapInfo.MapUid != "" && app.Editor is null){
@@ -78,56 +78,65 @@ void Main(){
         } catch {
             name = '';
         }
-        if(enabled && currentMapUid != "" && currentMapUid == mapUid && !PlaygroundClientScriptAPI.IsInGameMenuDisplayed && name != ''){
+        if(enabled && currentMapUid != "" && currentMapUid == mapUid && !PlaygroundClientScriptAPI.IsInGameMenuDisplayed && !PlaygroundClientScriptAPI.IsLoadingScreen && !PlaygroundClientScriptAPI.IsSpectator && !PlaygroundClientScriptAPI.IsSpectatorClient && name != ''){
 	        auto visState = VehicleState::ViewingPlayerState();
-            int currentHeight = visState.Position.y;
-            if(currentHeight > lastHeight){
-                lastHeight = currentHeight;
-                auto @j = Json::Object();
-                j["pos"] = Vec3ToJson(visState.Position);
-                j["rotq"] = QuatToJson(quat(DirUpLeftToMat(visState.Dir, visState.Up, visState.Left)));
-                j["vel"] = Vec3ToJson(visState.WorldVel);
-                j["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
-                j["player"] = name;
-                j["mapUid"] = currentMapUid;
-                lastSaved = j;
-            }
-            if(currentDelay >= maxDelay){
-                print("Saving new data...");
-                currentDelay = 0;
-                if(sendingMap == false){
-                    sendingMap = true;
-                    string time = tostring(Time::get_Stamp());
-                    payload[time] = lastSaved;
-                    lastSaved = Json::Object();
-                    lastHeight = 0;
-                    saved = saved + 1;
-                    if(saved == 5){
-                        try{
-                            print("Sending map info. ("+tostring(currentMapUid)+")");
-                            auto result = PostAsync(endpointUrl, payload);
-                            auto code = result.ResponseCode();
-                            if(code == 200){
-                                auto response = result.String();
-                                if(response == currentMapUid){
-                                    print("Map info sent. (" + tostring(response) + ")");
-                                }
-                                payload = Json::Object();
-                            } else {
-                                print("Failed to send map info. ("+tostring(code)+")");
-                            }
-                            saved = 0;
-                            sendingMap = false;
-                        } catch {
-                            warn("exception sending data to API: " + getExceptionInfo());
-                            sendingMap = false;
+	        auto player = VehicleState::GetViewingPlayer();
+            if(player != null){
+                @ScriptAPI = cast<CSmScriptPlayer>(player.ScriptAPI);
+                if(ScriptAPI.Post == CSmScriptPlayer::EPost::CarDriver){ 
+                    try {
+                        int currentHeight = visState.Position.y;
+                        if(currentHeight > lastHeight){
+                            lastHeight = currentHeight;
+                            auto @j = Json::Object();
+                            j["pos"] = Vec3ToJson(visState.Position);
+                            j["rotq"] = QuatToJson(quat(DirUpLeftToMat(visState.Dir, visState.Up, visState.Left)));
+                            j["vel"] = Vec3ToJson(visState.WorldVel);
+                            j["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
+                            j["player"] = name;
+                            j["mapUid"] = currentMapUid;
+                            lastSaved = j;
                         }
+                        if(currentDelay >= maxDelay){
+                            print("Saving new data...");
+                            currentDelay = 0;
+                            if(sendingMap == false){
+                                sendingMap = true;
+                                string time = tostring(Time::get_Stamp());
+                                payload[time] = lastSaved;
+                                lastSaved = Json::Object();
+                                lastHeight = 0;
+                                saved = saved + 1;
+                                if(saved == 5){
+                                    try{
+                                        print("Sending map info. ("+tostring(currentMapUid)+")");
+                                        auto result = PostAsync(endpointUrl, payload);
+                                        auto code = result.ResponseCode();
+                                        if(code == 200){
+                                            auto response = result.String();
+                                            if(response == currentMapUid){
+                                                print("Map info sent. (" + tostring(response) + ")");
+                                            }
+                                            payload = Json::Object();
+                                        } else {
+                                            print("Failed to send map info. ("+tostring(code)+")");
+                                        }
+                                        saved = 0;
+                                        sendingMap = false;
+                                    } catch {
+                                        warn("exception sending data to API: " + getExceptionInfo());
+                                        sendingMap = false;
+                                    }
+                                }
+                                sendingMap = false;
+                            }
+                        }
+                    } catch {
+                        print("Loading map...");
                     }
-                    sendingMap = false;
                 }
             }
         }
-
         currentDelay += stepDelay;
         sleep(stepDelay);
     }
