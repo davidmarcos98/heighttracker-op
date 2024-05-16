@@ -59,8 +59,7 @@ void Main(){
 
     while(true){
         auto map = app.RootMap;
-        CSmScriptPlayer@ ScriptAPI;
-        auto PlaygroundClientScriptAPI = app.Network.PlaygroundClientScriptAPI;
+        auto TMData = PlayerState::GetRaceData();
         
         if(enabled && map !is null && map.MapInfo.MapUid != "" && app.Editor is null){
             auto mapUid = map.MapInfo.MapUid;
@@ -78,7 +77,7 @@ void Main(){
         } catch {
             name = '';
         }
-        if(enabled && currentMapUid != "" && currentMapUid == mapUid && !PlaygroundClientScriptAPI.IsInGameMenuDisplayed && !PlaygroundClientScriptAPI.IsLoadingScreen && !PlaygroundClientScriptAPI.IsSpectator && !PlaygroundClientScriptAPI.IsSpectatorClient && name != ''){
+        if(enabled && currentMapUid != "" && currentMapUid == mapUid && TMData.PlayerState == PlayerState::EPlayerState_Driving && !TMData.IsPaused){
 	        auto visState = VehicleState::ViewingPlayerState();
 	        auto player = VehicleState::GetViewingPlayer();
             if(player != null){

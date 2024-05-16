@@ -2,10 +2,10 @@
 name = "Height Tracker"
 author = "socramdavid"
 category = "Utilities"
-version = "1.1.1"
+version = "1.1.2"
 siteid = 530
 
 [script]
 imports = [ "Formatting.as", "Time.as" ]
-dependencies = ["MLHook", "MLFeedRaceData", "VehicleState"] # need both
+dependencies = ["MLHook", "MLFeedRaceData", "PlayerState", "VehicleState"] # need both
 
