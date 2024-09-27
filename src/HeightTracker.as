@@ -87,7 +87,7 @@ void Main(){
                     j["pos"] = Vec3ToJson(visState.Position);
                     j["rotq"] = QuatToJson(quat(DirUpLeftToMat(visState.Dir, visState.Up, visState.Left)));
                     j["vel"] = Vec3ToJson(visState.WorldVel);
-                    j["mapName"] = tostring(StripFormatCodes(map.MapInfo.Name));
+                    j["mapName"] = tostring(Text::StripFormatCodes(map.MapInfo.Name));
                     j["player"] = name;
                     j["mapUid"] = currentMapUid;
                     lastSaved = j;
